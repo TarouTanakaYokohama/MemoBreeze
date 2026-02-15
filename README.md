@@ -71,6 +71,8 @@ mv vosk-model-en-us-0.22 vosk-model
 ```
 
 > **Note**: その他の言語モデルは [Vosk Models](https://alphacephei.com/vosk/models) から入手できます。
+>
+> **Note**: このリポジトリには Vosk モデルは同梱していません（`.gitignore` で `vosk-model-*` を除外）。
 
 ### 4. マイク権限の設定
 
@@ -346,7 +348,13 @@ find src-tauri/libs -name "*.dylib.XXXXXX" -delete
 
 ## ライセンス
 
-MIT License
+このリポジトリの**アプリ本体コード**は `MIT` です。
+
+ただし、実行時または配布時に利用・同梱する第三者コンポーネント
+（例: `Vosk API`、`Vosk model`、`whisper.cpp`、各種 `npm` / `cargo` 依存）は
+それぞれのライセンスに従います。
+
+詳細は `THIRD_PARTY_NOTICES.md` を参照してください。
 
 ## 技術スタック
 
