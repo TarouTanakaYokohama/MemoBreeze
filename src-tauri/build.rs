@@ -223,4 +223,5 @@ fn build_macos_audio() {
 
     println!("cargo:rustc-link-lib=framework=Foundation");
     println!("cargo:rustc-link-lib=framework=CoreAudio");
+    println!("cargo:rustc-link-lib=framework=CoreGraphics");
 }

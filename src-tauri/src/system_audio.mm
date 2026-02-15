@@ -188,6 +188,9 @@ extern "C" void* system_audio_tap_start(
             }
 
             NSString* tapUUID = [[[description UUID] UUIDString] copy];
+            NSString* aggregateSuffix = [[NSUUID UUID] UUIDString];
+            NSString* aggregateName = [NSString stringWithFormat:@"MemoBreezeSystemAudio-%@", aggregateSuffix];
+            NSString* aggregateUID = [NSString stringWithFormat:@"com.memobreeze.systemaudio.%@", aggregateSuffix];
 
             NSDictionary* tapEntry = @{
                 @kAudioSubTapUIDKey : tapUUID,
@@ -195,8 +198,8 @@ extern "C" void* system_audio_tap_start(
             };
 
             NSDictionary* aggregateDescription = @{
-                @kAudioAggregateDeviceNameKey : @"MemoBreezeSystemAudio",
-                @kAudioAggregateDeviceUIDKey : @"com.memobreeze.systemaudio",
+                @kAudioAggregateDeviceNameKey : aggregateName,
+                @kAudioAggregateDeviceUIDKey : aggregateUID,
                 @kAudioAggregateDeviceTapListKey : @[tapEntry],
                 @kAudioAggregateDeviceTapAutoStartKey : @NO,
                 @kAudioAggregateDeviceIsPrivateKey : @YES,
