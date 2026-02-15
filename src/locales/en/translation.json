@@ -1,0 +1,206 @@
+{
+	"app": {
+		"tagline": "Local-first meeting capture and minutes generation powered by Vosk and Ollama.",
+		"status": {
+			"recording": "Recording",
+			"idle": "Idle",
+			"totalDuration": "Total Duration",
+			"segments": "Segments"
+		},
+		"tabs": {
+			"recording": "Recording",
+			"minutes": "Minutes",
+			"main": "Recording & Minutes",
+			"transcript": "Transcript",
+			"settings": "Settings"
+		}
+	},
+	"languageSwitcher": {
+		"ariaLabel": "Change language",
+		"trigger": "Language",
+		"languages": {
+			"en": "English",
+			"ja": "日本語"
+		}
+	},
+	"accessibility": {
+		"toggleTheme": "Toggle theme"
+	},
+	"common": {
+		"markerTypes": {
+			"decision": "Decision",
+			"action": "Action",
+			"note": "Note"
+		},
+		"stats": {
+			"segments": "Segments",
+			"duration": "Duration",
+			"characters": "Characters"
+		},
+		"buttons": {
+			"stopRecording": "Stop Recording",
+			"startRecording": "Start Recording",
+			"exportMarkdown": "Export Markdown",
+			"clear": "Clear"
+		}
+	},
+	"recording": {
+		"title": "Recording",
+		"description": "Configure Vosk models and capture audio locally. Audio never leaves your device.",
+		"engine": {
+			"label": "Transcription Engine",
+			"options": {
+				"vosk": "Vosk",
+				"whisper": "Whisper"
+			},
+			"voskUnsupported": "Vosk is currently available only on macOS builds."
+		},
+		"modelPath": "Vosk Model Path",
+		"modelPathPlaceholder": "~/vosk-model-ja-0.22",
+		"speakerModelPath": "Speaker Model Path (optional)",
+		"speakerModelPlaceholder": "~/vosk-model-spk",
+		"whisperModelPath": "Whisper Model Path",
+		"whisperModelPathPlaceholder": "~/whisper.cpp/models/ggml-base.bin",
+		"whisperLanguage": "Whisper Language (optional)",
+		"whisperLanguagePlaceholder": "ja",
+		"whisperCommand": "Whisper CLI Command",
+		"whisperCommandPlaceholder": "whisper-cli",
+		"captureInput": {
+			"title": "Capture Input",
+			"description": "Default microphone device"
+		},
+		"captureOutput": {
+			"title": "Capture Output",
+			"description": "Loopback / system audio",
+			"unsupported": "System audio capture is currently available only on macOS."
+		},
+		"energyThreshold": "Energy Threshold",
+		"stats": {
+			"segments": "Segments",
+			"duration": "Duration"
+		}
+	},
+	"segmentEditor": {
+		"title": "Transcript",
+		"description": "Edit text or reassign speakers. Partial results update in real time.",
+		"segmentCount": "{{count}} segments",
+		"status": {
+			"final": "Final",
+			"partial": "Partial"
+		},
+		"speakerLabel": "Speaker",
+		"speakerOption": "Speaker {{index}}",
+		"speakerUnknown": "Unknown",
+		"empty": "Segments will appear here as transcription starts."
+	},
+	"main": {
+		"recordingControl": {
+			"title": "Recording",
+			"description": "Capture and transcribe audio"
+		},
+		"minutesGeneration": {
+			"title": "Minutes Generation",
+			"description": "Generate structured meeting minutes"
+		}
+	},
+	"transcript": {
+		"title": "Transcript",
+		"description": "Edit and manage segments",
+		"alerts": {
+			"exported": "Transcript exported:\n{{path}}",
+			"exportFailed": "Export failed: {{message}}"
+		}
+	},
+	"settings": {
+		"title": "Settings",
+		"vosk": {
+			"title": "Vosk Settings",
+			"description": "Configure voice recognition models and audio capture"
+		},
+		"googleDocs": {
+			"title": "Google Docs Sync",
+			"description": "Sign in with Google and append transcripts in real time.",
+			"connect": "Connect Google",
+			"connecting": "Connecting...",
+			"cancelConnecting": "Cancel Connecting",
+			"disconnect": "Disconnect",
+			"statusConnected": "Connected to Google",
+			"statusDisconnected": "Not connected",
+			"enabledLabel": "Enable realtime sync",
+			"enabledHint": "Each finalized segment is appended to Google Docs",
+			"documentUrl": "Google Doc URL",
+			"documentUrlPlaceholder": "https://docs.google.com/document/d/.../edit",
+			"note": "After connecting Google, set the destination Google Doc URL."
+		},
+		"recordingDisabledWarning": "Cannot change settings while recording"
+	},
+	"minutes": {
+		"title": "Minutes Generation",
+		"description": "Use a local Ollama model to generate structured minutes.",
+		"preset": {
+			"label": "Preset",
+			"options": {
+				"default": {
+					"name": "Standard Summary",
+					"description": "Summary, decisions, actions, and timeline with concise prose"
+				},
+				"detailed": {
+					"name": "Detailed Minutes",
+					"description": "Adds highlights and blockers paragraphs for longer meetings"
+				}
+			}
+		},
+		"model": {
+			"label": "Ollama Model",
+			"placeholder": "Select model",
+			"help": "Ensure Ollama is running locally (default port 11434)."
+		},
+		"format": {
+			"label": "Granularity",
+			"options": {
+				"meeting": "Meeting Summary",
+				"block": "Time-block Summary"
+			},
+			"blockSize": "Block Size (minutes)"
+		},
+		"temperature": "Temperature",
+		"stats": {
+			"segments": "Segments",
+			"duration": "Duration",
+			"characters": "Characters"
+		},
+		"buttons": {
+			"stopRecording": "Stop Recording",
+			"generate": "Generate Minutes",
+			"generating": "Generating...",
+			"export": "Export Markdown"
+		},
+		"alerts": {
+			"generated": "Minutes generated ({{duration}})",
+			"exported": "Minutes exported:\n{{path}}",
+			"exportFailed": "Export failed: {{message}}"
+		},
+		"duration": {
+			"format": "{{minutes}}m {{seconds}}s",
+			"secondsOnly": "{{seconds}}s"
+		},
+		"errors": {
+			"cannotGenerateWhileRecording": "Stop recording before generating minutes.",
+			"generationFailed": "Failed to generate minutes: {{message}}",
+			"toggleRecordingFailed": "Failed to update recording state: {{message}}",
+			"missingRecordingOptions": "Set up recording options on the Recording tab before starting."
+		},
+		"generated": {
+			"title": "Generated Minutes",
+			"description": "Generated at {{datetime}} using {{model}}",
+			"sectionEmpty": "No extractable items were found.",
+			"tabs": {
+				"summary": "Summary",
+				"decisions": "Decisions",
+				"actions": "Actions",
+				"timeline": "Timeline"
+			},
+			"timelineEmpty": "No timeline items."
+		}
+	}
+}
