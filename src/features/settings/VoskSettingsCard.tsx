@@ -1,5 +1,5 @@
 import type { RecordingOptions } from "@shared/types";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -34,6 +34,9 @@ export function VoskSettingsCard() {
 	);
 	const { t } = useTranslation();
 	const options = savedOptions ?? defaultRecordingOptions;
+	const isMacOS =
+		typeof navigator !== "undefined" &&
+		navigator.userAgent.toLowerCase().includes("mac");
 
 	const updateOptions = useCallback(
 		(updater: (previous: RecordingOptions) => RecordingOptions) => {
@@ -45,6 +48,20 @@ export function VoskSettingsCard() {
 		},
 		[setRecordingOptions],
 	);
+
+	useEffect(() => {
+		if (isRecording || isMacOS) {
+			return;
+		}
+
+		if (options.engine === "vosk" || options.enableOutput) {
+			updateOptions((prev) => ({
+				...prev,
+				engine: "whisper",
+				enableOutput: false,
+			}));
+		}
+	}, [isRecording, isMacOS, options.enableOutput, options.engine, updateOptions]);
 
 	return (
 		<Card>
@@ -75,7 +92,7 @@ export function VoskSettingsCard() {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="vosk">
+							<SelectItem value="vosk" disabled={!isMacOS}>
 								{t("recording.engine.options.vosk")}
 							</SelectItem>
 							<SelectItem value="whisper">
@@ -83,6 +100,11 @@ export function VoskSettingsCard() {
 							</SelectItem>
 						</SelectContent>
 					</Select>
+					{!isMacOS && (
+						<p className="text-xs text-muted-foreground">
+							{t("recording.engine.voskUnsupported")}
+						</p>
+					)}
 				</div>
 
 				{options.engine === "vosk" && (
@@ -214,13 +236,18 @@ export function VoskSettingsCard() {
 						</div>
 						<Switch
 							checked={options.enableOutput}
-							disabled={isRecording}
+							disabled={isRecording || !isMacOS}
 							onCheckedChange={(checked) =>
 								updateOptions((prev) => ({ ...prev, enableOutput: checked }))
 							}
 						/>
 					</div>
 				</div>
+				{!isMacOS && (
+					<p className="text-xs text-muted-foreground">
+						{t("recording.captureOutput.unsupported")}
+					</p>
+				)}
 
 				<div className="space-y-2">
 					<Label htmlFor="energy">{t("recording.energyThreshold")}</Label>

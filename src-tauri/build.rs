@@ -5,10 +5,16 @@ use std::process::Command;
 
 fn main() {
     configure_google_oauth_env();
-    configure_vosk_linking();
+    if target_os() == "macos" {
+        configure_vosk_linking();
+    }
     #[cfg(target_os = "macos")]
     build_macos_audio();
     tauri_build::build()
+}
+
+fn target_os() -> String {
+    env::var("CARGO_CFG_TARGET_OS").unwrap_or_default()
 }
 
 fn configure_google_oauth_env() {

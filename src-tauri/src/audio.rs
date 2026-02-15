@@ -14,9 +14,12 @@ use cpal::SampleFormat;
 use tauri::{AppHandle, Emitter};
 use tracing::{error, info, warn};
 use uuid::Uuid;
+#[cfg(target_os = "macos")]
 use vosk::{CompleteResult, DecodingState, Model, PartialResult, Recognizer, SpeakerModel};
 
-use crate::model::{RecordingOptions, TranscriptSegment, TranscriptToken, TranscriptionEngine};
+#[cfg(target_os = "macos")]
+use crate::model::TranscriptToken;
+use crate::model::{RecordingOptions, TranscriptSegment, TranscriptionEngine};
 use crate::speaker;
 use crate::state::AppState;
 
@@ -98,6 +101,12 @@ pub fn start_transcription(
 ) -> Result<TranscriptionRuntime> {
     if !options.enable_input && !options.enable_output {
         return Err(anyhow!("At least one audio source must be enabled"));
+    }
+    #[cfg(not(target_os = "macos"))]
+    if !options.enable_input && options.enable_output {
+        return Err(anyhow!(
+            "System audio capture is only supported on macOS. Enable microphone input on this platform."
+        ));
     }
 
     let (tx, rx) = mpsc::channel::<Vec<i16>>();
@@ -444,6 +453,7 @@ fn run_recognizer(
     }
 }
 
+#[cfg(target_os = "macos")]
 fn run_vosk_recognizer(
     app: AppHandle,
     state: AppState,
@@ -526,6 +536,21 @@ fn run_vosk_recognizer(
 
     info!("Recognizer stopped");
     Ok(())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn run_vosk_recognizer(
+    app: AppHandle,
+    state: AppState,
+    stop: Arc<AtomicBool>,
+    rx: mpsc::Receiver<Vec<i16>>,
+    sample_rate: f32,
+    options: RecordingOptions,
+) -> Result<()> {
+    let _ = (app, state, stop, rx, sample_rate, options);
+    Err(anyhow!(
+        "Vosk engine is currently supported on macOS only. Switch transcription engine to Whisper."
+    ))
 }
 
 fn run_whisper_recognizer(
@@ -770,6 +795,7 @@ fn normalize_whisper_text(text: &str) -> String {
         .join(" ")
 }
 
+#[cfg(target_os = "macos")]
 fn build_partial_segment(
     partial: PartialResult<'_>,
     pending_id: &mut Option<String>,
@@ -806,6 +832,7 @@ fn build_partial_segment(
     })
 }
 
+#[cfg(target_os = "macos")]
 fn build_segment_from_result(
     result: CompleteResult<'_>,
     pending_id: &mut Option<String>,

@@ -52,7 +52,8 @@
 			"options": {
 				"vosk": "Vosk",
 				"whisper": "Whisper"
-			}
+			},
+			"voskUnsupported": "Vosk is currently available only on macOS builds."
 		},
 		"modelPath": "Vosk Model Path",
 		"modelPathPlaceholder": "~/vosk-model-ja-0.22",
@@ -70,7 +71,8 @@
 		},
 		"captureOutput": {
 			"title": "Capture Output",
-			"description": "Loopback / system audio"
+			"description": "Loopback / system audio",
+			"unsupported": "System audio capture is currently available only on macOS."
 		},
 		"energyThreshold": "Energy Threshold",
 		"stats": {

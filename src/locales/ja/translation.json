@@ -52,7 +52,8 @@
 			"options": {
 				"vosk": "Vosk",
 				"whisper": "Whisper"
-			}
+			},
+			"voskUnsupported": "このビルドでは Vosk は macOS のみ対応です。"
 		},
 		"modelPath": "Vosk モデルのパス",
 		"modelPathPlaceholder": "~/vosk-model-ja-0.22",
@@ -70,7 +71,8 @@
 		},
 		"captureOutput": {
 			"title": "出力の録音",
-			"description": "ループバック / システム音声"
+			"description": "ループバック / システム音声",
+			"unsupported": "システム音声の録音は現在 macOS のみ対応です。"
 		},
 		"energyThreshold": "エネルギーしきい値",
 		"stats": {
