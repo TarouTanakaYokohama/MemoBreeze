@@ -29,6 +29,14 @@ use crate::system_audio::{SystemAudioCapture, SystemAudioFrame};
 const CHANNEL_TIMEOUT: Duration = Duration::from_millis(200);
 const WHISPER_MIN_SILENCE_SECONDS: f32 = 0.8;
 const WHISPER_MIN_SEGMENT_SECONDS: f32 = 0.5;
+const WHISPER_DEFAULT_SILENCE_THRESHOLD: f32 = 0.008;
+
+#[cfg(target_os = "macos")]
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
+}
 
 pub struct TranscriptionRuntime {
     stop: Arc<AtomicBool>,
@@ -142,8 +150,13 @@ pub fn start_transcription(
     {
         let mut system_capture = None;
         let mut system_thread = None;
+        let mut system_audio_error = None;
 
         if options.enable_output {
+            if let Err(error) = ensure_system_audio_capture_permission() {
+                return Err(error);
+            }
+
             match start_system_audio(stop.clone(), tx.clone(), sample_rate) {
                 Ok((capture, handle, actual_rate)) => {
                     if sample_rate.is_none() {
@@ -154,8 +167,16 @@ pub fn start_transcription(
                 }
                 Err(error) => {
                     warn!(?error, "Failed to start system audio capture");
+                    system_audio_error = Some(error);
                 }
             }
+        }
+
+        if let Some(error) = system_audio_error {
+            return Err(anyhow!(
+                "Capture Output is enabled, but system audio capture failed to start: {error:#}. \
+                Check macOS settings: Privacy & Security > Screen & System Audio Recording."
+            ));
         }
 
         runtime.system_capture = system_capture;
@@ -359,6 +380,42 @@ fn start_system_audio(
 }
 
 #[cfg(target_os = "macos")]
+fn ensure_system_audio_capture_permission() -> Result<()> {
+    let granted = unsafe {
+        if CGPreflightScreenCaptureAccess() {
+            true
+        } else {
+            CGRequestScreenCaptureAccess()
+        }
+    };
+
+    if granted {
+        Ok(())
+    } else {
+        let _ = open_system_audio_privacy_settings();
+        Err(anyhow!(
+            "System audio recording permission is denied. Allow MemoBreeze in \
+            Privacy & Security > Screen & System Audio Recording, then retry."
+        ))
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn open_system_audio_privacy_settings() -> Result<()> {
+    // Deep-link to the privacy pane used by screen/system audio capture permission.
+    let status = Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+        .status()
+        .context("failed to open macOS privacy settings")?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(anyhow!("open command exited with status {status}"))
+    }
+}
+
+#[cfg(target_os = "macos")]
 fn forward_system_audio(
     rx: mpsc::Receiver<SystemAudioFrame>,
     tx: mpsc::Sender<Vec<i16>>,
@@ -384,7 +441,8 @@ fn forward_system_audio(
                     continue;
                 }
 
-                let chunk = convert_f32_to_i16(&samples);
+                let normalized = normalize_system_audio_level(&samples);
+                let chunk = convert_f32_to_i16(&normalized);
                 if let Err(error) = tx.send(chunk) {
                     error!(?error, "failed to forward system audio chunk");
                     break;
@@ -436,6 +494,26 @@ fn convert_f32_to_i16(data: &[f32]) -> Vec<i16> {
         converted.push((clamped * i16::MAX as f32).round() as i16);
     }
     converted
+}
+
+#[cfg(target_os = "macos")]
+fn normalize_system_audio_level(data: &[f32]) -> Vec<f32> {
+    if data.is_empty() {
+        return Vec::new();
+    }
+
+    let energy = data.iter().map(|sample| sample * sample).sum::<f32>() / data.len() as f32;
+    let rms = energy.sqrt();
+
+    // System tap audio can be much quieter than microphone input.
+    // Apply conservative AGC to keep recognition sensitivity stable.
+    let gain = if rms > 0.0 && rms < 0.05 {
+        (0.08 / rms).clamp(1.0, 6.0)
+    } else {
+        1.0
+    };
+
+    data.iter().map(|sample| (sample * gain).clamp(-1.0, 1.0)).collect()
 }
 
 fn run_recognizer(
@@ -962,6 +1040,10 @@ fn is_silence(chunk: &[i16], threshold: f32) -> bool {
 
 fn is_silence_for_whisper(chunk: &[i16], threshold: f32) -> bool {
     // Whisper segmentation needs a practical default even when threshold is 0.
-    let threshold = if threshold <= 0.0 { 0.015 } else { threshold };
+    let threshold = if threshold <= 0.0 {
+        WHISPER_DEFAULT_SILENCE_THRESHOLD
+    } else {
+        threshold
+    };
     is_silence(chunk, threshold)
 }
