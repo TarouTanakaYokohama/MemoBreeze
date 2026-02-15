@@ -1,0 +1,6 @@
+# Rust formatter config (Biome の format に相当)
+# https://github.com/rust-lang/rustfmt/blob/main/Configurations.md
+max_width = 100
+use_small_heuristics = "Default"
+reorder_imports = true
+reorder_modules = true

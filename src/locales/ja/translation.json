@@ -1,0 +1,204 @@
+{
+	"app": {
+		"tagline": "Vosk と Ollama を活用したローカル完結の会議録音・議事録生成アプリです。",
+		"status": {
+			"recording": "録音中",
+			"idle": "待機中",
+			"totalDuration": "合計時間",
+			"segments": "セグメント数"
+		},
+		"tabs": {
+			"recording": "録音",
+			"minutes": "議事録",
+			"main": "録音・議事録",
+			"transcript": "書き起こし",
+			"settings": "設定"
+		}
+	},
+	"languageSwitcher": {
+		"ariaLabel": "言語を切り替える",
+		"trigger": "言語",
+		"languages": {
+			"en": "English",
+			"ja": "日本語"
+		}
+	},
+	"accessibility": {
+		"toggleTheme": "テーマを切り替える"
+	},
+	"common": {
+		"markerTypes": {
+			"decision": "決定",
+			"action": "アクション",
+			"note": "ノート"
+		},
+		"stats": {
+			"segments": "セグメント数",
+			"duration": "時間",
+			"characters": "文字数"
+		},
+		"buttons": {
+			"stopRecording": "録音を停止",
+			"startRecording": "録音を開始",
+			"exportMarkdown": "Markdown をエクスポート",
+			"clear": "クリア"
+		}
+	},
+	"recording": {
+		"title": "録音",
+		"description": "Vosk モデルを設定してローカルで音声を取得します。音声データが端末の外に出ることはありません。",
+		"engine": {
+			"label": "文字起こしエンジン",
+			"options": {
+				"vosk": "Vosk",
+				"whisper": "Whisper"
+			}
+		},
+		"modelPath": "Vosk モデルのパス",
+		"modelPathPlaceholder": "~/vosk-model-ja-0.22",
+		"speakerModelPath": "話者モデルのパス (任意)",
+		"speakerModelPlaceholder": "~/vosk-model-spk",
+		"whisperModelPath": "Whisper モデルのパス",
+		"whisperModelPathPlaceholder": "~/whisper.cpp/models/ggml-base.bin",
+		"whisperLanguage": "Whisper 言語 (任意)",
+		"whisperLanguagePlaceholder": "ja",
+		"whisperCommand": "Whisper CLI コマンド",
+		"whisperCommandPlaceholder": "whisper-cli",
+		"captureInput": {
+			"title": "入力の録音",
+			"description": "既定のマイクデバイス"
+		},
+		"captureOutput": {
+			"title": "出力の録音",
+			"description": "ループバック / システム音声"
+		},
+		"energyThreshold": "エネルギーしきい値",
+		"stats": {
+			"segments": "セグメント数",
+			"duration": "時間"
+		}
+	},
+	"segmentEditor": {
+		"title": "書き起こし",
+		"description": "テキストを編集したり話者を再割り当てできます。暫定結果はリアルタイムに更新されます。",
+		"segmentCount": "セグメント数: {{count}}",
+		"status": {
+			"final": "確定",
+			"partial": "暫定"
+		},
+		"speakerLabel": "話者",
+		"speakerOption": "話者 {{index}}",
+		"speakerUnknown": "不明",
+		"empty": "書き起こしが始まるとここにセグメントが表示されます。"
+	},
+	"main": {
+		"recordingControl": {
+			"title": "録音",
+			"description": "音声を取得して書き起こします"
+		},
+		"minutesGeneration": {
+			"title": "議事録生成",
+			"description": "構造化された議事録を生成します"
+		}
+	},
+	"transcript": {
+		"title": "書き起こし",
+		"description": "セグメントを編集・管理します",
+		"alerts": {
+			"exported": "書き起こしをエクスポートしました:\n{{path}}",
+			"exportFailed": "エクスポートに失敗しました: {{message}}"
+		}
+	},
+	"settings": {
+		"title": "設定",
+		"vosk": {
+			"title": "Vosk 設定",
+			"description": "音声認識モデルとオーディオキャプチャの設定"
+		},
+		"googleDocs": {
+			"title": "Google Docs 連携",
+			"description": "Google でログインして、書き起こしをリアルタイム追記します。",
+			"connect": "Googleで連携",
+			"connecting": "連携中...",
+			"cancelConnecting": "連携を中断",
+			"disconnect": "連携解除",
+			"statusConnected": "Google連携済み",
+			"statusDisconnected": "Google未連携",
+			"enabledLabel": "リアルタイム連携を有効化",
+			"enabledHint": "final セグメントが届くたびに Google Docs へ追記します",
+			"documentUrl": "Google ドキュメント URL",
+			"documentUrlPlaceholder": "https://docs.google.com/document/d/.../edit",
+			"note": "Google連携後、追記先のドキュメントURLを入力してください。"
+		},
+		"recordingDisabledWarning": "録音中は設定を変更できません"
+	},
+	"minutes": {
+		"title": "議事録生成",
+		"description": "ローカルの Ollama モデルで構造化された議事録を生成します。",
+		"preset": {
+			"label": "プリセット",
+			"options": {
+				"default": {
+					"name": "標準サマリー",
+					"description": "サマリー・決定・アクション・タイムラインを簡潔にまとめます"
+				},
+				"detailed": {
+					"name": "詳細議事録",
+					"description": "長時間の会議向けにハイライトと課題を追加します"
+				}
+			}
+		},
+		"model": {
+			"label": "Ollama モデル",
+			"placeholder": "モデルを選択",
+			"help": "Ollama がローカルで起動しているか確認してください (既定ポート 11434)。"
+		},
+		"format": {
+			"label": "粒度",
+			"options": {
+				"meeting": "会議全体のサマリー",
+				"block": "時間ブロックのサマリー"
+			},
+			"blockSize": "ブロック長 (分)"
+		},
+		"temperature": "温度",
+		"stats": {
+			"segments": "セグメント数",
+			"duration": "時間",
+			"characters": "文字数"
+		},
+		"buttons": {
+			"stopRecording": "録音を停止",
+			"generate": "議事録を生成",
+			"generating": "生成中...",
+			"export": "Markdown をエクスポート"
+		},
+		"alerts": {
+			"generated": "議事録を生成しました（生成時間: {{duration}}）",
+			"exported": "議事録をエクスポートしました:\n{{path}}",
+			"exportFailed": "エクスポートに失敗しました: {{message}}"
+		},
+		"duration": {
+			"format": "{{minutes}}分{{seconds}}秒",
+			"secondsOnly": "{{seconds}}秒"
+		},
+		"errors": {
+			"cannotGenerateWhileRecording": "議事録を生成する前に録音を停止してください。",
+			"generationFailed": "議事録の生成に失敗しました: {{message}}",
+			"toggleRecordingFailed": "録音状態の更新に失敗しました: {{message}}",
+			"missingRecordingOptions": "録音を開始する前に録音タブで設定を行ってください。"
+		},
+		"generated": {
+			"title": "生成された議事録",
+			"description": "{{datetime}} に {{model}} で生成",
+			"sectionEmpty": "抽出できる項目はありませんでした。",
+			"tabs": {
+				"summary": "サマリー",
+				"decisions": "決定事項",
+				"actions": "アクション",
+				"timeline": "タイムライン"
+			},
+			"timelineEmpty": "タイムライン項目がありません。"
+		}
+	}
+}
