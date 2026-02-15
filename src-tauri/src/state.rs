@@ -88,6 +88,7 @@ impl AppState {
         }
     }
 
+    #[cfg(target_os = "macos")]
     pub fn push_partial(
         &self,
         mut segment: TranscriptSegment,

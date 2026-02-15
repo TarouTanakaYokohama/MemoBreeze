@@ -75,6 +75,7 @@ impl EventEmitter {
         Self { app }
     }
 
+    #[cfg(target_os = "macos")]
     fn emit_partial(&self, segment: &TranscriptSegment) {
         if let Err(error) = self.app.emit("transcription:partial", segment) {
             error!(?error, "failed to emit partial segment");
@@ -395,6 +396,7 @@ fn forward_system_audio(
     }
 }
 
+#[cfg(target_os = "macos")]
 fn resample_buffer(data: &[f32], source_rate: f32, target_rate: f32) -> Vec<f32> {
     if data.is_empty() {
         return Vec::new();
@@ -426,6 +428,7 @@ fn resample_buffer(data: &[f32], source_rate: f32, target_rate: f32) -> Vec<f32>
     output
 }
 
+#[cfg(target_os = "macos")]
 fn convert_f32_to_i16(data: &[f32]) -> Vec<i16> {
     let mut converted = Vec::with_capacity(data.len());
     for &sample in data {
@@ -776,7 +779,7 @@ fn write_wav_mono_i16(path: &Path, samples: &[i16], sample_rate: f32) -> Result<
     file.write_all(&data_len.to_le_bytes())
         .context("Failed to write wav data length")?;
 
-    let mut pcm_data = Vec::with_capacity(samples.len() * std::mem::size_of::<i16>());
+    let mut pcm_data = Vec::with_capacity(std::mem::size_of_val(samples));
     for &sample in samples {
         pcm_data.extend_from_slice(&sample.to_le_bytes());
     }

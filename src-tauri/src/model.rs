@@ -70,17 +70,12 @@ pub struct MinutesDocument {
     pub blockers: Option<MinutesSection>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum TranscriptionEngine {
     Vosk,
+    #[default]
     Whisper,
-}
-
-impl Default for TranscriptionEngine {
-    fn default() -> Self {
-        Self::Whisper
-    }
 }
 
 fn default_whisper_command() -> String {
