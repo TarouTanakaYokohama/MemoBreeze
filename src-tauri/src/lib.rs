@@ -760,3 +760,90 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+    use serial_test::serial;
+    use tempfile::tempdir;
+
+    #[test]
+    fn build_pkce_code_verifier_has_expected_shape() {
+        let verifier = build_pkce_code_verifier();
+        assert_eq!(verifier.len(), 64);
+        assert!(verifier.chars().all(|ch| ch.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn build_pkce_code_challenge_matches_known_vector() {
+        let challenge = build_pkce_code_challenge("abc");
+        assert_eq!(challenge, "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0");
+    }
+
+    #[test]
+    fn normalize_path_rejects_empty_input() {
+        let result = normalize_path("   ");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn normalize_path_resolves_existing_file() {
+        let tmp = tempdir().unwrap();
+        let file = tmp.path().join("model.bin");
+        std::fs::write(&file, b"dummy").unwrap();
+
+        let normalized = normalize_path(file.to_str().unwrap()).unwrap();
+        assert!(normalized.ends_with("model.bin"));
+    }
+
+    #[test]
+    fn resolve_command_path_finds_standard_shell() {
+        let resolved = resolve_command_path("sh");
+        assert!(resolved.is_some());
+    }
+
+    #[test]
+    fn resolve_command_path_returns_none_for_unknown_command() {
+        let resolved = resolve_command_path("memo-breeze-command-that-does-not-exist");
+        assert_eq!(resolved, None);
+    }
+
+    #[test]
+    #[serial]
+    fn resolve_known_whisper_command_path_finds_local_candidate() {
+        let temp = tempdir().unwrap();
+        let previous = std::env::current_dir().unwrap();
+        let candidate_dir = temp.path().join("tools/whisper.cpp/build/bin");
+        std::fs::create_dir_all(&candidate_dir).unwrap();
+        std::fs::write(candidate_dir.join("whisper-cli"), b"#!/bin/sh\n").unwrap();
+
+        std::env::set_current_dir(temp.path()).unwrap();
+        let resolved = resolve_known_whisper_command_path("whisper-cli");
+        std::env::set_current_dir(previous).unwrap();
+
+        assert!(resolved.is_some());
+        assert!(resolved
+            .unwrap()
+            .contains("tools/whisper.cpp/build/bin/whisper-cli"));
+    }
+
+    #[test]
+    #[serial]
+    fn resolve_known_whisper_model_path_finds_local_candidate() {
+        let temp = tempdir().unwrap();
+        let previous = std::env::current_dir().unwrap();
+        let model_dir = temp.path().join("tools/whisper.cpp/models");
+        std::fs::create_dir_all(&model_dir).unwrap();
+        std::fs::write(model_dir.join("ggml-base.bin"), b"dummy-model").unwrap();
+
+        std::env::set_current_dir(temp.path()).unwrap();
+        let resolved = resolve_known_whisper_model_path(Some("ggml-base.bin"));
+        std::env::set_current_dir(previous).unwrap();
+
+        assert!(resolved.is_some());
+        assert!(resolved
+            .unwrap()
+            .contains("tools/whisper.cpp/models/ggml-base.bin"));
+    }
+}

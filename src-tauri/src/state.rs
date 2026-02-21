@@ -260,3 +260,151 @@ fn collect_speaker_embeddings(records: &[SegmentRecord]) -> Vec<(String, Vec<f32
     }
     embeddings
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{TranscriptToken, TranscriptionEngine};
+    use pretty_assertions::assert_eq;
+
+    fn sample_options() -> RecordingOptions {
+        RecordingOptions {
+            engine: TranscriptionEngine::Whisper,
+            model_path: "/tmp/vosk-model".to_string(),
+            speaker_model_path: None,
+            whisper_model_path: "/tmp/ggml-base.bin".to_string(),
+            whisper_language: Some("ja".to_string()),
+            whisper_command: "whisper-cli".to_string(),
+            enable_input: true,
+            enable_output: false,
+            energy_threshold: 0.0,
+        }
+    }
+
+    fn sample_segment(id: &str, start: f32, speaker: &str) -> TranscriptSegment {
+        TranscriptSegment {
+            id: id.to_string(),
+            speaker: speaker.to_string(),
+            text: format!("text-{id}"),
+            start,
+            end: start + 1.0,
+            tokens: vec![TranscriptToken {
+                text: "hello".to_string(),
+                start,
+                end: start + 0.2,
+                confidence: 0.9,
+            }],
+            is_final: false,
+        }
+    }
+
+    #[test]
+    fn start_session_sets_options_and_clears_completed() {
+        let state = AppState::default();
+        let session_id = state.start_session(sample_options());
+        assert!(!session_id.is_empty());
+        assert!(state.recording_options().is_some());
+        assert_eq!(state.speaker_embeddings(), Vec::<(String, Vec<f32>)>::new());
+    }
+
+    #[test]
+    fn push_final_inserts_in_start_time_order() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+
+        state.push_final(sample_segment("b", 20.0, "S2"), None);
+        state.push_final(sample_segment("a", 10.0, "S1"), None);
+        state.push_final(sample_segment("c", 30.0, "S3"), None);
+
+        let snapshot = state.snapshot().expect("snapshot should exist");
+        let ids: Vec<String> = snapshot.segments.iter().map(|s| s.id.clone()).collect();
+        assert_eq!(ids, vec!["a".to_string(), "b".to_string(), "c".to_string()]);
+    }
+
+    #[test]
+    fn push_final_updates_existing_segment_instead_of_duplicate() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+
+        state.push_final(sample_segment("x", 10.0, "S1"), Some(vec![0.1, 0.2]));
+        let mut updated = sample_segment("x", 10.0, "S1");
+        updated.text = "updated".to_string();
+        state.push_final(updated, Some(vec![0.3, 0.4]));
+
+        let snapshot = state.snapshot().expect("snapshot should exist");
+        assert_eq!(snapshot.segments.len(), 1);
+        assert_eq!(snapshot.segments[0].text, "updated");
+
+        let embeddings = state.speaker_embeddings();
+        assert_eq!(embeddings.len(), 1);
+        assert_eq!(embeddings[0].1, vec![0.3, 0.4]);
+    }
+
+    #[test]
+    fn assign_speaker_if_changed_returns_none_when_same() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+        state.push_final(sample_segment("x", 0.0, "Speaker 1"), None);
+
+        let result = state.assign_speaker_if_changed("x", "Speaker 1");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn assign_speaker_if_changed_updates_when_different() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+        state.push_final(sample_segment("x", 0.0, "Speaker 1"), None);
+
+        let result = state
+            .assign_speaker_if_changed("x", "Speaker 2")
+            .expect("segment should be updated");
+        assert_eq!(result.speaker, "Speaker 2");
+    }
+
+    #[test]
+    fn update_segment_returns_none_for_missing_segment() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+
+        let result = state.update_segment(sample_segment("missing", 0.0, "S1"));
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn stop_session_preserves_last_options() {
+        let state = AppState::default();
+        let options = sample_options();
+        state.start_session(options.clone());
+        state.push_final(sample_segment("x", 0.0, "S1"), None);
+
+        state.stop_session();
+
+        let restored = state.recording_options().expect("options should persist");
+        assert_eq!(restored.whisper_model_path, options.whisper_model_path);
+        assert!(state.snapshot().is_none());
+    }
+
+    #[test]
+    fn speaker_embeddings_read_from_completed_after_stop() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+        state.push_final(sample_segment("x", 0.0, "S1"), Some(vec![1.0, 2.0, 3.0]));
+
+        state.stop_session();
+
+        let embeddings = state.speaker_embeddings();
+        assert_eq!(embeddings, vec![("x".to_string(), vec![1.0, 2.0, 3.0])]);
+    }
+
+    #[test]
+    fn snapshot_contains_segments_while_session_is_active() {
+        let state = AppState::default();
+        state.start_session(sample_options());
+        state.push_final(sample_segment("x", 5.0, "S1"), None);
+
+        let snapshot = state.snapshot().expect("active snapshot");
+        assert_eq!(snapshot.segments.len(), 1);
+        assert_eq!(snapshot.segments[0].id, "x");
+    }
+}

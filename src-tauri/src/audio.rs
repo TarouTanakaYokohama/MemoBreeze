@@ -153,9 +153,7 @@ pub fn start_transcription(
         let mut system_audio_error = None;
 
         if options.enable_output {
-            if let Err(error) = ensure_system_audio_capture_permission() {
-                return Err(error);
-            }
+            ensure_system_audio_capture_permission()?;
 
             match start_system_audio(stop.clone(), tx.clone(), sample_rate) {
                 Ok((capture, handle, actual_rate)) => {
@@ -513,7 +511,9 @@ fn normalize_system_audio_level(data: &[f32]) -> Vec<f32> {
         1.0
     };
 
-    data.iter().map(|sample| (sample * gain).clamp(-1.0, 1.0)).collect()
+    data.iter()
+        .map(|sample| (sample * gain).clamp(-1.0, 1.0))
+        .collect()
 }
 
 fn run_recognizer(

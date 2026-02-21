@@ -191,3 +191,108 @@ pub fn format_timestamp(seconds: f32) -> String {
     let secs = (seconds % 60.0).floor() as u32;
     format!("{:02}:{:02}", minutes, secs)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+    use pretty_assertions::assert_eq;
+    use proptest::prelude::*;
+
+    fn sample_document() -> MinutesDocument {
+        MinutesDocument {
+            preset: "default".to_string(),
+            format: "meeting".to_string(),
+            model: "llama3".to_string(),
+            generated_at: Utc.with_ymd_and_hms(2026, 2, 1, 10, 0, 0).unwrap(),
+            summary: MinutesSection {
+                title: "Summary".to_string(),
+                content: "Summary body".to_string(),
+            },
+            decisions: MinutesSection {
+                title: "Decisions".to_string(),
+                content: "Decision A".to_string(),
+            },
+            actions: MinutesSection {
+                title: "Actions".to_string(),
+                content: "Action A".to_string(),
+            },
+            timeline: Vec::new(),
+            highlights: None,
+            blockers: None,
+        }
+    }
+
+    #[test]
+    fn format_timestamp_clamps_negative_values() {
+        assert_eq!(format_timestamp(-9.2), "00:00");
+    }
+
+    #[test]
+    fn format_timestamp_formats_minutes_and_seconds() {
+        assert_eq!(format_timestamp(125.9), "02:05");
+    }
+
+    #[test]
+    fn as_markdown_uses_fallback_for_empty_sections() {
+        let mut doc = sample_document();
+        doc.summary.content = "   ".to_string();
+        doc.decisions.content = "\n".to_string();
+        doc.actions.content = "".to_string();
+
+        let markdown = doc.as_markdown();
+        assert!(markdown.contains("## Summary\n- (抽出なし)"));
+        assert!(markdown.contains("## 決定事項 / Decisions\n- (抽出なし)"));
+        assert!(markdown.contains("## アクション / Action Items\n- (抽出なし)"));
+    }
+
+    #[test]
+    fn as_markdown_renders_timeline_and_markers() {
+        let mut doc = sample_document();
+        doc.timeline = vec![TopicSummary {
+            id: "topic-1".to_string(),
+            title: "Topic".to_string(),
+            description: "Discussed project status".to_string(),
+            start: 30.0,
+            end: 95.0,
+            markers: vec![TimelineMarker {
+                id: "marker-1".to_string(),
+                label: "Decision".to_string(),
+                kind: "decision".to_string(),
+                timestamp: 63.0,
+            }],
+        }];
+
+        let markdown = doc.as_markdown();
+        assert!(markdown.contains("### Block 1 (00:30 - 01:35)"));
+        assert!(markdown.contains("Discussed project status"));
+        assert!(markdown.contains("- Markers:"));
+        assert!(markdown.contains("[decision] Decision @ 01:03"));
+    }
+
+    #[test]
+    fn as_markdown_includes_optional_sections() {
+        let mut doc = sample_document();
+        doc.highlights = Some(MinutesSection {
+            title: "Highlights".to_string(),
+            content: "Shipped feature X".to_string(),
+        });
+        doc.blockers = Some(MinutesSection {
+            title: "Blockers".to_string(),
+            content: "Need infra access".to_string(),
+        });
+
+        let markdown = doc.as_markdown();
+        assert!(markdown.contains("## Highlights\nShipped feature X"));
+        assert!(markdown.contains("## Blockers\nNeed infra access"));
+    }
+
+    proptest! {
+        #[test]
+        fn format_timestamp_returns_mm_ss_shape(seconds in -5000.0f32..5000.0f32) {
+            let out = format_timestamp(seconds);
+            prop_assert_eq!(out.len(), 5);
+            prop_assert_eq!(&out[2..3], ":");
+        }
+    }
+}

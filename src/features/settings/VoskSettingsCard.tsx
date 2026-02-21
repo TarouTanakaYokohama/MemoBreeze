@@ -61,7 +61,13 @@ export function VoskSettingsCard() {
 				enableOutput: false,
 			}));
 		}
-	}, [isRecording, isMacOS, options.enableOutput, options.engine, updateOptions]);
+	}, [
+		isRecording,
+		isMacOS,
+		options.enableOutput,
+		options.engine,
+		updateOptions,
+	]);
 
 	return (
 		<Card>
