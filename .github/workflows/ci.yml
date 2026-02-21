@@ -28,7 +28,7 @@ jobs:
         run: bun run test
 
   rust:
-    name: Rust (clippy)
+    name: Rust (clippy + test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +64,9 @@ jobs:
 
       - name: Clippy
         run: cd src-tauri && cargo clippy -- -D warnings
+
+      - name: Test
+        run: cd src-tauri && cargo test
 
   rust-audit:
     name: Rust (cargo-audit)

@@ -56,3 +56,11 @@ vosk = "0.3"
 objc2 = "0.6"
 objc2-foundation = "0.3"
 block2 = "0.6"
+
+[dev-dependencies]
+mockall = "0.13"
+pretty_assertions = "1.4"
+proptest = "1.6"
+rstest = "0.24"
+serial_test = "3.2"
+tempfile = "3.13"

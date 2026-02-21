@@ -136,3 +136,116 @@ pub fn clear_google_oauth_token() -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{MinutesSection, TopicSummary, TranscriptToken};
+    use chrono::TimeZone;
+    use pretty_assertions::assert_eq;
+    use tempfile::tempdir;
+
+    fn sample_minutes_document() -> MinutesDocument {
+        MinutesDocument {
+            preset: "default".to_string(),
+            format: "meeting".to_string(),
+            model: "llama3".to_string(),
+            generated_at: Utc.with_ymd_and_hms(2026, 2, 1, 10, 0, 0).unwrap(),
+            summary: MinutesSection {
+                title: "Summary".to_string(),
+                content: "Summary content".to_string(),
+            },
+            decisions: MinutesSection {
+                title: "Decisions".to_string(),
+                content: "Decision content".to_string(),
+            },
+            actions: MinutesSection {
+                title: "Actions".to_string(),
+                content: "Action content".to_string(),
+            },
+            timeline: vec![TopicSummary {
+                id: "topic-1".to_string(),
+                title: "Topic".to_string(),
+                description: "Description".to_string(),
+                start: 0.0,
+                end: 60.0,
+                markers: Vec::new(),
+            }],
+            highlights: None,
+            blockers: None,
+        }
+    }
+
+    fn segment(id: &str, start: f32, end: f32, speaker: &str, text: &str) -> TranscriptSegment {
+        TranscriptSegment {
+            id: id.to_string(),
+            speaker: speaker.to_string(),
+            text: text.to_string(),
+            start,
+            end,
+            tokens: vec![TranscriptToken {
+                text: text.to_string(),
+                start,
+                end,
+                confidence: 0.8,
+            }],
+            is_final: true,
+        }
+    }
+
+    #[test]
+    fn export_minutes_writes_markdown_to_explicit_path() {
+        let tmp = tempdir().unwrap();
+        let out_path = tmp.path().join("nested/minutes.md");
+        let doc = sample_minutes_document();
+
+        let written = export_minutes(&doc, Some(out_path.clone())).unwrap();
+        let content = fs::read_to_string(&written).unwrap();
+
+        assert_eq!(written, out_path);
+        assert!(content.contains("# Meeting Minutes"));
+        assert!(content.contains("## Summary"));
+        assert!(content.contains("Summary content"));
+    }
+
+    #[test]
+    fn export_transcript_markdown_sorts_segments_by_start() {
+        let tmp = tempdir().unwrap();
+        let out_path = tmp.path().join("transcript.md");
+        let segments = vec![
+            segment("b", 30.0, 31.0, "Speaker 2", "  second  "),
+            segment("a", 10.0, 11.0, "Speaker 1", " first "),
+        ];
+
+        export_transcript_markdown(&segments, Some(out_path.clone())).unwrap();
+        let content = fs::read_to_string(out_path).unwrap();
+
+        let first_idx = content.find("Speaker 1").unwrap();
+        let second_idx = content.find("Speaker 2").unwrap();
+        assert!(first_idx < second_idx);
+        assert!(content.contains("**Speaker 1**: first"));
+        assert!(content.contains("**Speaker 2**: second"));
+    }
+
+    #[test]
+    fn load_snapshot_parses_serialized_snapshot() {
+        let tmp = tempdir().unwrap();
+        let snapshot_path = tmp.path().join("snapshot.json");
+        let snapshot = SessionSnapshot {
+            id: "session-1".to_string(),
+            started_at: Utc.with_ymd_and_hms(2026, 2, 1, 11, 0, 0).unwrap(),
+            segments: vec![segment("a", 0.0, 1.0, "Speaker 1", "hello")],
+        };
+
+        fs::write(
+            &snapshot_path,
+            serde_json::to_string_pretty(&snapshot).unwrap(),
+        )
+        .unwrap();
+
+        let loaded = load_snapshot(&snapshot_path).unwrap();
+        assert_eq!(loaded.id, "session-1");
+        assert_eq!(loaded.segments.len(), 1);
+        assert_eq!(loaded.segments[0].text, "hello");
+    }
+}
